@@ -393,7 +393,8 @@ function lockPage() {
 <p class="sub">Scan the QR code on your PC again, or type the access code shown under it.</p>
 <form onsubmit="event.preventDefault();location.href='/?k='+encodeURIComponent(this.k.value.trim())">
 <input name="k" class="input" placeholder="Access code" autocomplete="off" autocapitalize="off" spellcheck="false" required>
-<button class="btn" type="submit">Connect</button></form></section></main></body></html>`;
+<button class="btn" type="submit">Connect</button></form></section></main>
+<footer><p class="credit">Built with <span class="heart" aria-label="love">&hearts;</span> by <a href="https://apcodesphere.xyz" target="_blank" rel="noopener">apcodesphere</a> &middot; <a href="https://preciousadedokun.com.ng" target="_blank" rel="noopener">preciousadedokun.com.ng</a></p></footer></body></html>`;
 }
 
 // Requests that came through a reverse proxy (e.g. the app was deployed to a

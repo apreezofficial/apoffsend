@@ -46,6 +46,7 @@ body {
   color: var(--ink);
   font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
 }
 h1, h2, h3 { margin: 0; font-family: var(--display); font-weight: 900; letter-spacing: -0.02em; line-height: 1.05; }
 h2 { font-size: 22px; }
@@ -65,8 +66,8 @@ a { color: inherit; }
   background: var(--bg);
   border-bottom: var(--b) solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
-.word { font-family: var(--display); font-size: 22px; letter-spacing: -0.03em; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; flex: none; }
+.word { font-family: var(--display); font-size: 22px; letter-spacing: -0.03em; white-space: nowrap; }
 .word b { color: var(--orange); }
 .mark {
   display: grid; place-items: center; flex: none;
@@ -119,7 +120,7 @@ main { max-width: 960px; margin: 0 auto; padding: 20px 16px; display: grid; gap:
 .hero h1 em { font-style: normal; color: var(--orange); }
 
 /* --------------------------------------------------------------- connect */
-.connect-grid { display: grid; grid-template-columns: 250px 1fr; gap: 28px; align-items: start; }
+.connect-grid { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 28px; align-items: start; }
 .qr-wrap { position: relative; }
 .qr {
   background: #fff; border: var(--b) solid var(--line); border-radius: 18px; padding: 10px;
@@ -132,7 +133,7 @@ main { max-width: 960px; margin: 0 auto; padding: 20px 16px; display: grid; gap:
   padding: 4px 10px; font-family: var(--display); font-size: 14px; box-shadow: var(--pop-sm);
 }
 .steps { list-style: none; margin: 14px 0 16px; padding: 0; display: grid; gap: 12px; }
-.steps li { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; }
+.steps li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: start; }
 .steps .num {
   display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
   background: var(--yellow); color: #141210; border: var(--b) solid var(--line); font-family: var(--display); font-size: 16px;
@@ -278,7 +279,7 @@ code { font-family: var(--mono); background: var(--tint); padding: 1px 6px; bord
 /* --------------------------------------------------------------- install */
 .install { background: var(--ink); color: var(--bg); }
 .install .sub { color: color-mix(in srgb, var(--bg) 70%, transparent); }
-.install-grid { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; }
+.install-grid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; }
 .install-icon {
   display: grid; place-items: center; width: 120px; height: 120px; border-radius: 30px; font-size: 72px;
   background: var(--lime); color: #141210; border: var(--b) solid var(--bg); transform: rotate(-5deg);
@@ -296,8 +297,16 @@ code { font-family: var(--mono); background: var(--tint); padding: 1px 6px; bord
 .cmd .icon-btn { background: transparent; color: inherit; border-color: color-mix(in srgb, var(--bg) 35%, transparent); }
 .cmd .icon-btn:hover { background: var(--lime); color: #141210; }
 .install .note { font-size: 13px; margin: 10px 0 0; opacity: .7; }
+.install code { background: color-mix(in srgb, var(--bg) 18%, transparent); color: inherit; }
 
 footer { text-align: center; padding: 6px 16px 34px; color: var(--soft); font-weight: 600; font-size: 13px; }
+footer p { margin: 0 0 6px; }
+.credit { color: var(--ink); font-size: 14px; }
+.credit a { font-weight: 800; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.credit a:hover { color: var(--orange); }
+.heart { color: var(--orange); display: inline-block; animation: beat 1.4s ease-in-out infinite; }
+@keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.3); } 30% { transform: scale(1); } }
+body.lock footer { position: fixed; left: 0; right: 0; bottom: 0; }
 
 /* ------------------------------------------------------------- overlays */
 .toast {
@@ -340,7 +349,7 @@ body.lock main { min-height: 100vh; align-content: center; max-width: 440px; }
 .feature h3 { font-size: 20px; }
 .feature p { margin: 0; color: var(--soft); }
 .how { counter-reset: step; list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 14px; }
-.how li { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; }
+.how li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start; }
 .how li::before {
   counter-increment: step; content: counter(step);
   display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
@@ -351,18 +360,33 @@ body.lock main { min-height: 100vh; align-content: center; max-width: 440px; }
 @media (max-width: 680px) {
   main { padding: 16px 14px; gap: 18px; }
   .card { padding: 16px; border-radius: 18px; }
-  .connect-grid { grid-template-columns: 1fr; }
+  .connect-grid { grid-template-columns: minmax(0, 1fr); }
   .qr-wrap { max-width: 260px; width: 100%; margin: 6px auto 0; }
   .dev-box { width: 92px; height: 92px; font-size: 54px; border-radius: 24px; }
   .drop-icon { width: 116px; height: 116px; font-size: 66px; }
   .files { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .thumb { font-size: 60px; }
   .tactions .btn { padding: 8px 6px; }
-  .install-grid { grid-template-columns: 1fr; justify-items: start; }
+  .install-grid { grid-template-columns: minmax(0, 1fr); justify-items: start; }
+  .install-grid > div { width: 100%; }
+  .cmd { align-items: flex-start; }
+  .cmd code { white-space: normal; word-break: break-all; line-height: 1.5; padding: 4px 0; }
+  .install-actions .btn { flex: 1 1 auto; }
+  .landing-hero { padding-top: 20px; }
+  .landing-hero .sub { font-size: 16px; }
+  .card-head h2 { font-size: 20px; }
+  .text-form .btn { padding: 8px 12px; }
   .install-icon { width: 96px; height: 96px; font-size: 58px; }
   .word { font-size: 19px; }
 }
 @media (max-width: 380px) {
-  .status { max-width: 46vw; }
+  .top { padding-left: 12px; padding-right: 12px; }
+  .word { font-size: 17px; }
+  .mark { width: 34px; height: 34px; font-size: 20px; }
+  .status { max-width: 44vw; }
   .tactions .btn span { display: none; }
+}
+@media (max-width: 345px) {
+  #status-text { display: none; }
+  .status { padding: 6px; }
 }
