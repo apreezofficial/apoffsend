@@ -17,10 +17,14 @@ No internet, no cloud, no app to install on the phone, no npm dependencies.
 
 Install page: **https://apoffsend.pxxl.pro**
 
-Windows, one step (downloads it, installs Node.js if missing, adds Desktop and Start Menu shortcuts). Paste into PowerShell:
+**Windows, easiest:** download [ApOffSend-Setup.bat](https://apoffsend.pxxl.pro/ApOffSend-Setup.bat) and double-click it.
+It downloads ApOffSend, installs Node.js if it is missing, and adds Desktop and Start Menu shortcuts.
+If Windows says it protected your PC, click **More info → Run anyway**.
 
-```powershell
-irm https://raw.githubusercontent.com/apreezofficial/apoffsend/main/public/install.ps1 | iex
+Or paste this into Command Prompt or PowerShell:
+
+```bash
+powershell -c "irm https://raw.githubusercontent.com/apreezofficial/apoffsend/main/public/install.ps1 | iex"
 ```
 
 Or [download the zip](https://github.com/apreezofficial/apoffsend/archive/refs/heads/main.zip). You need

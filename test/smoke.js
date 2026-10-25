@@ -122,13 +122,16 @@ async function main() {
   // Visitors arriving through a reverse proxy (public hosting) only get the install page
   const proxied = { 'x-forwarded-for': '203.0.113.9' };
   r = await fetch(`${base}/`, { headers: proxied });
-  assert((await r.text()).includes('One-line install'));
+  assert((await r.text()).includes('Download installer'));
   for (const f of ['/api/info', '/api/files', '/api/events', `/api/files/pc/${encodeURIComponent(name)}`]) {
     r = await fetch(base + f, { headers: proxied, redirect: 'manual' });
     assert.strictEqual(r.status, 302, f);
   }
   r = await fetch(`${base}/api/upload?name=x`, { method: 'POST', body: 'x', headers: proxied });
   assert.strictEqual(r.status, 405);
+  r = await fetch(`${base}/ApOffSend-Setup.bat`, { headers: proxied });
+  assert(r.headers.get('content-disposition').startsWith('attachment'));
+  assert((await r.text()).includes('install.ps1'));
   r = await fetch(`${base}/install.ps1`, { headers: proxied });
   assert((await r.text()).includes('ApOffSend installer'));
 

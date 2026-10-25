@@ -278,7 +278,10 @@ function openExternal(target) {
 async function serveStatic(res, file) {
   try {
     const data = await fsp.readFile(path.join(PUBLIC_DIR, file));
-    res.writeHead(200, { 'Content-Type': mimeOf(file), 'Content-Length': data.length, 'Cache-Control': 'no-cache' });
+    const headers = { 'Content-Type': mimeOf(file), 'Content-Length': data.length, 'Cache-Control': 'no-cache' };
+    // The Windows installer must download rather than display as text
+    if (file.endsWith('.bat')) headers['Content-Disposition'] = contentDisposition('attachment', file);
+    res.writeHead(200, headers);
     res.end(data);
   } catch {
     sendJSON(res, 404, { error: 'Not found' });
@@ -405,7 +408,7 @@ function isProxied(req) {
 function routePublic(req, res, p) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return sendJSON(res, 405, { error: 'Not available here' });
   if (p === '/' || p === '/index.html') return serveStatic(res, 'landing.html');
-  if (['/style.css', '/favicon.svg', '/icons.js', '/install.ps1'].includes(p)) return serveStatic(res, p.slice(1));
+  if (['/style.css', '/favicon.svg', '/icons.js', '/install.ps1', '/ApOffSend-Setup.bat'].includes(p)) return serveStatic(res, p.slice(1));
   res.writeHead(302, { Location: '/' });
   res.end();
 }
@@ -416,7 +419,8 @@ async function route(req, res) {
   const url = new URL(req.url, 'http://x');
   const p = url.pathname;
   if (isProxied(req)) return routePublic(req, res, p);
-  if (p === '/install.ps1' || p === '/get') return serveStatic(res, p === '/get' ? 'landing.html' : 'install.ps1');
+  if (p === '/install.ps1' || p === '/ApOffSend-Setup.bat') return serveStatic(res, p.slice(1));
+  if (p === '/get') return serveStatic(res, 'landing.html');
   const device = deviceOf(req);
 
   const cookies = parseCookies(req.headers.cookie);

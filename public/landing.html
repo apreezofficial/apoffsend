@@ -25,8 +25,8 @@
       <h1>PC <em>&harr;</em> phone.<br>No internet.</h1>
       <p class="sub">Throw files, photos, videos and links between your computer and your phone over Wi-Fi or a hotspot. Scan a QR code and you're in &mdash; nothing to install on the phone.</p>
       <div class="install-actions">
-        <a class="btn" href="https://github.com/apreezofficial/apoffsend/archive/refs/heads/main.zip"><i data-icon="download"></i>Download for PC</a>
-        <a class="btn alt" href="#install"><i data-icon="terminal"></i>One-line install</a>
+        <a class="btn" href="/ApOffSend-Setup.bat" download><i data-icon="download"></i>Download for Windows</a>
+        <a class="btn alt" href="#install"><i data-icon="laptop"></i>How to install</a>
       </div>
     </section>
     <script>document.querySelector('.landing-hero').classList.add('hero', 'linked');</script>
@@ -53,11 +53,17 @@
         <span class="install-icon"><i data-icon="laptop"></i></span>
         <div>
           <h2>Install on Windows</h2>
-          <p class="sub">Open <b>PowerShell</b>, paste this and press Enter. It downloads ApOffSend, installs Node.js if needed and adds a desktop shortcut.</p>
-          <div class="cmd"><code id="install-cmd">irm https://raw.githubusercontent.com/apreezofficial/apoffsend/main/public/install.ps1 | iex</code><button type="button" class="icon-btn" id="copy-cmd" title="Copy"><i data-icon="copy"></i></button></div>
+          <ol class="how">
+            <li><span><b>Download the installer</b> below.</span></li>
+            <li><span><b>Double-click</b> <code>ApOffSend-Setup.bat</code>. If Windows says it protected your PC, click <b>More info &rarr; Run anyway</b>.</span></li>
+            <li><span>Done &mdash; open <b>ApOffSend</b> from your desktop any time.</span></li>
+          </ol>
           <div class="install-actions">
-            <a class="btn lime" href="https://github.com/apreezofficial/apoffsend/archive/refs/heads/main.zip"><i data-icon="download"></i>Or download the .zip</a>
+            <a class="btn lime" href="/ApOffSend-Setup.bat" download><i data-icon="download"></i>Download installer</a>
+            <a class="btn alt" href="https://github.com/apreezofficial/apoffsend/archive/refs/heads/main.zip"><i data-icon="zip"></i>Or get the .zip</a>
           </div>
+          <p class="note">Prefer typing? Paste this into Command Prompt or PowerShell. It also installs Node.js if needed and adds a desktop shortcut.</p>
+          <div class="cmd"><code id="install-cmd">powershell -c "irm https://raw.githubusercontent.com/apreezofficial/apoffsend/main/public/install.ps1 | iex"</code><button type="button" class="icon-btn" id="copy-cmd" title="Copy"><i data-icon="copy"></i></button></div>
           <p class="note">Mac / Linux: install <a href="https://nodejs.org" target="_blank" rel="noopener">Node.js</a>, download the zip, then run <code>node server.js</code> in the folder.</p>
         </div>
       </div>
