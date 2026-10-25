@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <title>ApOffSend</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="logo">&#8644;</span> ApOffSend</div>
+    <div id="status" class="status"><span class="dot"></span><span id="status-text">Connecting…</span></div>
+  </header>
+
+  <main>
+    <section id="connect" class="card hidden">
+      <div class="connect">
+        <div id="qr" class="qr" aria-label="QR code to open ApOffSend on your phone"></div>
+        <div class="connect-info">
+          <h2>Connect your phone</h2>
+          <ol class="steps">
+            <li>Put your phone on the <b>same Wi-Fi</b> as this PC &mdash; or turn on the phone's <b>hotspot</b> and connect the PC to it. No internet needed.</li>
+            <li>Scan this QR code with the phone's camera.</li>
+          </ol>
+          <div id="url" class="url"></div>
+          <div id="ip-list" class="chips"></div>
+          <p class="muted small" id="code-line"></p>
+          <p id="devices" class="devices small"></p>
+          <details class="help small">
+            <summary>Phone can't open the page?</summary>
+            <ul>
+              <li>Check both devices are on the same network.</li>
+              <li>Windows may block it: when Windows Firewall asks, allow Node.js on <b>Private and Public</b> networks, or run <code>firewall.bat</code> as administrator once.</li>
+              <li>If you see several addresses above, try another one.</li>
+              <li>Some routers have "AP/client isolation" on guest Wi-Fi &mdash; use the phone hotspot instead.</li>
+            </ul>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 id="send-title">Send files</h2>
+      <label id="drop" class="drop">
+        <input type="file" id="file-input" multiple hidden>
+        <span class="drop-icon">&#8679;</span>
+        <span class="drop-text"><b>Tap to choose files</b><span class="pc-only"> or drop / paste them here</span></span>
+        <span class="muted small" id="send-hint"></span>
+      </label>
+      <div class="queue-head hidden" id="queue-head">
+        <span id="queue-summary" class="small muted"></span>
+        <button id="queue-clear" class="btn ghost small" type="button">Clear finished</button>
+      </div>
+      <ul id="queue" class="queue"></ul>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Files</h2>
+        <div class="tabs" role="tablist">
+          <button type="button" data-tab="in" class="active" role="tab">Received <span class="count" id="count-in"></span></button>
+          <button type="button" data-tab="out" role="tab">Sent <span class="count" id="count-out"></span></button>
+        </div>
+      </div>
+      <div class="list-actions">
+        <a id="zip-btn" class="btn ghost small hidden" href="#">Download all (.zip)</a>
+        <button id="open-folder" class="btn ghost small hidden" type="button">Open folder</button>
+      </div>
+      <ul id="files" class="files"></ul>
+      <p id="empty" class="empty"></p>
+    </section>
+
+    <section class="card">
+      <h2>Text &amp; links</h2>
+      <form id="text-form" class="text-form">
+        <textarea id="text-input" rows="2" placeholder="Type or paste text / a link to send…"></textarea>
+        <button class="btn" type="submit">Send</button>
+      </form>
+      <ul id="texts" class="texts"></ul>
+    </section>
+  </main>
+
+  <footer class="muted small">Works offline over your local network &middot; your files never leave your devices</footer>
+  <div id="drag-overlay" class="drag-overlay"><div>Drop files to send</div></div>
+  <div id="toast" class="toast" role="status"></div>
+
+  <script src="/qr.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
