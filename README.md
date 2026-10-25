@@ -13,9 +13,18 @@ No internet, no cloud, no app to install on the phone, no npm dependencies.
 - Drag and drop or paste (Ctrl+V) files on the PC
 - Access code in the QR link so other people on the same Wi-Fi can't get in
 
-## Requirements
+## Install on a PC
 
-[Node.js](https://nodejs.org) 18 or newer on the PC. Nothing else.
+Install page: **https://apoffsend.pxxl.pro**
+
+Windows, one step (downloads it, installs Node.js if missing, adds Desktop and Start Menu shortcuts). Paste into PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/apreezofficial/apoffsend/main/public/install.ps1 | iex
+```
+
+Or [download the zip](https://github.com/apreezofficial/apoffsend/archive/refs/heads/main.zip). You need
+[Node.js](https://nodejs.org) 18 or newer, and nothing else.
 
 ## Start
 
@@ -72,6 +81,13 @@ Example — share two files straight from the command line:
 ```bash
 node server.js "C:\Videos\clip.mp4" report.pdf
 ```
+
+## Hosting the install page
+
+If you deploy this repo to a hosting service, visitors there only get the install page.
+Requests that come through a reverse proxy (`X-Forwarded-For` and similar headers) are
+treated as internet traffic. They can't see or send files and never get the access code.
+Transfers only happen on the copy running on your own PC.
 
 ## Test
 

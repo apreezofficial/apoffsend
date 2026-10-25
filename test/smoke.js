@@ -119,8 +119,21 @@ async function main() {
   assert.strictEqual(r.status, 200);
   assert(!fs.existsSync(path.join(dir, 'from-phone', 'IMG_001.jpg')));
 
+  // Visitors arriving through a reverse proxy (public hosting) only get the install page
+  const proxied = { 'x-forwarded-for': '203.0.113.9' };
+  r = await fetch(`${base}/`, { headers: proxied });
+  assert((await r.text()).includes('One-line install'));
+  for (const f of ['/api/info', '/api/files', '/api/events', `/api/files/pc/${encodeURIComponent(name)}`]) {
+    r = await fetch(base + f, { headers: proxied, redirect: 'manual' });
+    assert.strictEqual(r.status, 302, f);
+  }
+  r = await fetch(`${base}/api/upload?name=x`, { method: 'POST', body: 'x', headers: proxied });
+  assert.strictEqual(r.status, 405);
+  r = await fetch(`${base}/install.ps1`, { headers: proxied });
+  assert((await r.text()).includes('ApOffSend installer'));
+
   // Static assets
-  for (const f of ['/', '/app.js', '/qr.js', '/style.css']) {
+  for (const f of ['/', '/app.js', '/qr.js', '/icons.js', '/style.css', '/install.ps1', '/get']) {
     r = await fetch(base + f);
     assert.strictEqual(r.status, 200, f);
   }

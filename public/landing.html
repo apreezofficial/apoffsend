@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ff5a1f">
+  <title>ApOffSend</title>
+  <meta name="description" content="Send files and text between your PC and phone over Wi-Fi or hotspot. Offline, free, no app needed on the phone.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/"><span class="mark"><i data-icon="logo"></i></span><span class="word">ApOff<b>Send</b></span></a>
+    <a class="btn alt small" href="https://github.com/apreezofficial/apoffsend" target="_blank" rel="noopener"><i data-icon="github"></i>GitHub</a>
+  </header>
+
+  <main>
+    <section class="landing-hero">
+      <div class="bridge">
+        <div class="dev me"><span class="dev-box"><i data-icon="laptop"></i></span><span class="dev-label">PC</span></div>
+        <div class="wire"></div>
+        <div class="dev other"><span class="dev-box"><i data-icon="phone"></i></span><span class="dev-label">Phone</span></div>
+      </div>
+      <h1>PC <em>&harr;</em> phone.<br>No internet.</h1>
+      <p class="sub">Throw files, photos, videos and links between your computer and your phone over Wi-Fi or a hotspot. Scan a QR code and you're in &mdash; nothing to install on the phone.</p>
+      <div class="install-actions">
+        <a class="btn" href="https://github.com/apreezofficial/apoffsend/archive/refs/heads/main.zip"><i data-icon="download"></i>Download for PC</a>
+        <a class="btn alt" href="#install"><i data-icon="terminal"></i>One-line install</a>
+      </div>
+    </section>
+    <script>document.querySelector('.landing-hero').classList.add('hero', 'linked');</script>
+
+    <section class="features">
+      <div class="card feature"><span class="f-ico k-image"><i data-icon="wifi"></i></span><h3>Fully offline</h3><p>Works on any Wi-Fi router or phone hotspot. Mobile data can stay off.</p></div>
+      <div class="card feature"><span class="f-ico k-video"><i data-icon="bolt"></i></span><h3>Any size, full speed</h3><p>Files stream straight to disk at your network's speed. 10 GB movie? Fine.</p></div>
+      <div class="card feature"><span class="f-ico k-audio"><i data-icon="phone"></i></span><h3>No phone app</h3><p>The phone just uses its browser. Android or iPhone, it doesn't matter.</p></div>
+      <div class="card feature"><span class="f-ico k-doc"><i data-icon="lock"></i></span><h3>Private</h3><p>Files never touch the internet, and an access code keeps neighbours out.</p></div>
+    </section>
+
+    <section class="card">
+      <h2>How it works</h2>
+      <ol class="how">
+        <li><span><b>Install it on your PC</b> &mdash; download below, or use the one-line installer.</span></li>
+        <li><span><b>Open ApOffSend</b> from the desktop shortcut (or double-click <code>start.bat</code>). A page with a QR code opens.</span></li>
+        <li><span><b>Scan the QR code</b> with your phone camera while both are on the same Wi-Fi or hotspot.</span></li>
+        <li><span><b>Send away</b> &mdash; drop files on either side and they appear on the other.</span></li>
+      </ol>
+    </section>
+
+    <section class="card install" id="install">
+      <div class="install-grid">
+        <span class="install-icon"><i data-icon="laptop"></i></span>
+        <div>
+          <h2>Install on Windows</h2>
+          <p class="sub">Open <b>PowerShell</b>, paste this and press Enter. It downloads ApOffSend, installs Node.js if needed and adds a desktop shortcut.</p>
+          <div class="cmd"><code id="install-cmd">irm https://raw.githubusercontent.com/apreezofficial/apoffsend/main/public/install.ps1 | iex</code><button type="button" class="icon-btn" id="copy-cmd" title="Copy"><i data-icon="copy"></i></button></div>
+          <div class="install-actions">
+            <a class="btn lime" href="https://github.com/apreezofficial/apoffsend/archive/refs/heads/main.zip"><i data-icon="download"></i>Or download the .zip</a>
+          </div>
+          <p class="note">Mac / Linux: install <a href="https://nodejs.org" target="_blank" rel="noopener">Node.js</a>, download the zip, then run <code>node server.js</code> in the folder.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Made by apreezofficial &middot; free &amp; open source</footer>
+  <div id="toast" class="toast" role="status"></div>
+
+  <script src="/icons.js"></script>
+  <script>
+    document.getElementById('copy-cmd').onclick = async () => {
+      const text = document.getElementById('install-cmd').textContent;
+      let ok = false;
+      try { await navigator.clipboard.writeText(text); ok = true; } catch {}
+      const t = document.getElementById('toast');
+      t.textContent = ok ? 'Copied — paste it into PowerShell' : 'Select the command and copy it';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2400);
+    };
+  </script>
+</body>
+</html>

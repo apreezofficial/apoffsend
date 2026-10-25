@@ -28,6 +28,8 @@ Options:
   -d, --dir <dir>  Folder for transferred files (default ~/ApOffSend)
       --no-open    Don't open the browser on this PC
       --no-pin     Don't require the access code (anyone on the network can connect)
+      --allow-proxy  Serve the full app behind a reverse proxy (by default proxied
+                     visitors only see the install page)
   -h, --help       Show this help
 
 Files given on the command line are copied into the "from-pc" folder so the
@@ -40,6 +42,7 @@ function parseArgs(argv) {
     dir: path.join(os.homedir(), 'ApOffSend'),
     open: true,
     pin: true,
+    allowProxy: false,
     files: [],
   };
   for (let i = 0; i < argv.length; i++) {
@@ -48,6 +51,7 @@ function parseArgs(argv) {
     else if (a === '-d' || a === '--dir') opts.dir = path.resolve(argv[++i]);
     else if (a === '--no-open') opts.open = false;
     else if (a === '--no-pin') opts.pin = false;
+    else if (a === '--allow-proxy') opts.allowProxy = true;
     else if (a === '-h' || a === '--help') { printHelp(); process.exit(0); }
     else opts.files.push(path.resolve(a));
   }
@@ -191,7 +195,7 @@ const MIME = {
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.xls': 'application/vnd.ms-excel', '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   '.ppt': 'application/vnd.ms-powerpoint', '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  '.epub': 'application/epub+zip',
+  '.epub': 'application/epub+zip', '.ps1': 'text/plain; charset=utf-8',
 };
 const mimeOf = (name) => MIME[path.extname(name).toLowerCase()] || 'application/octet-stream';
 
@@ -378,12 +382,32 @@ function handleEvents(req, res, device) {
 
 function lockPage() {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ApOffSend</title><link rel="stylesheet" href="/style.css"></head><body class="lock">
-<main><section class="card lock-card"><div class="logo big">&#8644;</div><h1>ApOffSend</h1>
-<p class="muted">Scan the QR code shown on your PC, or type the access code shown under it.</p>
+<meta name="theme-color" content="#ff5a1f"><title>ApOffSend</title><link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css"></head><body class="lock">
+<main><section class="card lock-card">
+<span class="mark big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h15l-4-4"/><path d="M20 16H5l4 4"/></svg></span>
+<h1 class="display">Almost there</h1>
+<p class="sub">Scan the QR code on your PC again, or type the access code shown under it.</p>
 <form onsubmit="event.preventDefault();location.href='/?k='+encodeURIComponent(this.k.value.trim())">
 <input name="k" class="input" placeholder="Access code" autocomplete="off" autocapitalize="off" spellcheck="false" required>
 <button class="btn" type="submit">Connect</button></form></section></main></body></html>`;
+}
+
+// Requests that came through a reverse proxy (e.g. the app was deployed to a
+// hosting service) are from the internet, not the local network. They only get
+// the install page — never the files, and never the access code.
+function isProxied(req) {
+  if (opts.allowProxy) return false;
+  const h = req.headers;
+  return Boolean(h['x-forwarded-for'] || h.forwarded || h['x-real-ip'] || h['cf-connecting-ip'] || h['x-forwarded-host']);
+}
+
+function routePublic(req, res, p) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return sendJSON(res, 405, { error: 'Not available here' });
+  if (p === '/' || p === '/index.html') return serveStatic(res, 'landing.html');
+  if (['/style.css', '/favicon.svg', '/icons.js', '/install.ps1'].includes(p)) return serveStatic(res, p.slice(1));
+  res.writeHead(302, { Location: '/' });
+  res.end();
 }
 
 // ----------------------------------------------------------------- router --
@@ -391,6 +415,8 @@ function lockPage() {
 async function route(req, res) {
   const url = new URL(req.url, 'http://x');
   const p = url.pathname;
+  if (isProxied(req)) return routePublic(req, res, p);
+  if (p === '/install.ps1' || p === '/get') return serveStatic(res, p === '/get' ? 'landing.html' : 'install.ps1');
   const device = deviceOf(req);
 
   const cookies = parseCookies(req.headers.cookie);
@@ -404,7 +430,7 @@ async function route(req, res) {
     return res.end();
   }
 
-  if (p === '/style.css' || p === '/favicon.svg') return serveStatic(res, p.slice(1));
+  if (p === '/style.css' || p === '/favicon.svg' || p === '/icons.js') return serveStatic(res, p.slice(1));
   if (!authed) {
     if (p === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -414,7 +440,7 @@ async function route(req, res) {
   }
 
   if (req.method === 'GET' && (p === '/' || p === '/index.html')) return serveStatic(res, 'index.html');
-  if (req.method === 'GET' && (p === '/app.js' || p === '/qr.js')) return serveStatic(res, p.slice(1));
+  if (req.method === 'GET' && (p === '/app.js' || p === '/qr.js' || p === '/icons.js')) return serveStatic(res, p.slice(1));
 
   if (p === '/api/info' && req.method === 'GET') {
     const info = { me: device, hostname: os.hostname(), version: VERSION, port: server.address().port };

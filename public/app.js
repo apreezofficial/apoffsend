@@ -2,7 +2,7 @@
   'use strict';
 
   const $ = (s) => document.querySelector(s);
-  const state = { info: null, me: 'phone', files: [], texts: [], tab: 'in', address: null, seen: null };
+  const state = { info: null, me: 'phone', files: [], texts: [], tab: 'in', address: null, seen: null, peers: [], online: false };
   const queue = [];
   let active = null;
 
@@ -72,12 +72,62 @@
 
   function kindOf(name) {
     const ext = (name.split('.').pop() || '').toLowerCase();
-    if (/^(jpe?g|png|gif|webp|bmp|svg|avif)$/.test(ext)) return 'image';
+    if (/^(jpe?g|png|gif|webp|bmp|svg|avif|heic|heif)$/.test(ext)) return 'image';
     if (/^(mp4|mkv|webm|mov|avi|3gp|m4v)$/.test(ext)) return 'video';
     if (/^(mp3|m4a|wav|ogg|flac|aac|opus)$/.test(ext)) return 'audio';
-    if (/^(zip|rar|7z|tar|gz|apk)$/.test(ext)) return 'archive';
-    if (/^(pdf|docx?|xlsx?|pptx?|txt|md|csv|epub)$/.test(ext)) return 'doc';
+    if (/^(zip|rar|7z|tar|gz|apk|exe|msi)$/.test(ext)) return 'archive';
+    if (/^(pdf|docx?|xlsx?|pptx?|epub|odt)$/.test(ext)) return 'doc';
+    if (/^(txt|md|csv|json|log|html?|js|css|py)$/.test(ext)) return 'text';
     return 'other';
+  }
+  const KIND_ICON = { image: 'image', video: 'video', audio: 'audio', archive: 'archive', doc: 'doc', text: 'text', other: 'file' };
+  const canPreview = (name) => /\.(jpe?g|png|gif|webp|bmp|svg|avif)$/i.test(name);
+
+  // --------------------------------------------------------------- hero --
+
+  function setStatus(kind, text) {
+    const s = $('#status');
+    s.className = 'status ' + kind;
+    $('#status-text').textContent = text;
+  }
+
+  function renderHero() {
+    const pc = state.me === 'pc';
+    const phones = state.peers.filter((d) => d.device === 'phone');
+    const linked = state.online && (pc ? phones.length > 0 : true);
+    const hostname = state.info ? state.info.hostname : 'your PC';
+
+    $('#me-icon').innerHTML = icon(pc ? 'laptop' : 'phone');
+    $('#other-icon').innerHTML = icon(pc ? 'phone' : 'laptop');
+    $('#me-label').textContent = pc ? 'This PC' : 'This phone';
+    $('#other').classList.toggle('idle', !linked);
+    $('#hero').classList.toggle('linked', linked);
+
+    let title, sub;
+    if (!state.online) {
+      title = pc ? 'Server <em>stopped</em>' : 'Lost the <em>connection</em>';
+      sub = pc ? 'Start ApOffSend again on this PC.' : 'Reconnecting… check the PC is on and on the same network.';
+      setStatus('off', pc ? 'Stopped' : 'Reconnecting…');
+      $('#other-label').textContent = pc ? 'Phone' : 'PC';
+    } else if (pc && !phones.length) {
+      title = 'Waiting for your <em>phone</em>';
+      sub = 'Scan the QR code below with the phone camera.';
+      setStatus('wait', 'Waiting for phone');
+      $('#other-label').textContent = 'Phone';
+    } else if (pc) {
+      const names = [...new Set(phones.map((p) => p.name))];
+      title = `Linked with <em>${esc(names[0])}</em>`;
+      sub = names.length > 1 ? `Plus ${names.length - 1} more device${names.length > 2 ? 's' : ''}. Drop files below to send.` : 'Drop files below to send them over.';
+      setStatus('on', names.length > 1 ? `${phones.length} connected` : `${names[0]} connected`);
+      $('#other-label').textContent = names[0];
+    } else {
+      title = `Linked with <em>${esc(hostname)}</em>`;
+      sub = 'Send files both ways. Nothing goes over the internet.';
+      setStatus('on', 'Connected');
+      $('#other-label').textContent = hostname;
+    }
+    $('#hero-title').innerHTML = title;
+    $('#hero-sub').textContent = sub;
   }
 
   // ------------------------------------------------------------- connect --
@@ -97,32 +147,15 @@
       return;
     }
     const link = `http://${state.address}:${info.port}/` + (info.key ? `?k=${info.key}` : '');
-    $('#qr').innerHTML = QR.toSVG(link, { ecl: 'M', border: 2 });
+    if ($('#qr').dataset.link !== link) {
+      $('#qr').innerHTML = QR.toSVG(link, { ecl: 'M', border: 1, dark: '#141210' });
+      $('#qr').dataset.link = link;
+    }
     $('#url').textContent = `http://${state.address}:${info.port}`;
     $('#ip-list').innerHTML = addrs.length > 1
       ? addrs.map((a) => `<button type="button" class="chip${a.address === state.address ? ' active' : ''}" data-ip="${esc(a.address)}" title="${esc(a.ifname)}">${esc(a.address)} · ${esc(a.ifname)}</button>`).join('')
       : '';
-    $('#code-line').innerHTML = info.key ? `Typing the address instead? Access code: <b>${esc(info.key)}</b>` : '';
-  }
-
-  function renderDevices(list) {
-    if (state.me !== 'pc') return;
-    const phones = list.filter((d) => d.device === 'phone');
-    const el = $('#devices');
-    if (phones.length) {
-      el.innerHTML = '<span class="ok">&#10003; Connected:</span> ' + [...new Set(phones.map((p) => p.name))].map(esc).join(', ');
-      setStatus(true, phones.length === 1 ? `${phones[0].name} connected` : `${phones.length} devices connected`);
-    } else {
-      el.textContent = 'Waiting for your phone…';
-      setStatus(true, 'Waiting for phone');
-    }
-  }
-
-  function setStatus(on, text) {
-    const s = $('#status');
-    s.classList.toggle('on', on);
-    s.classList.toggle('off', !on);
-    $('#status-text').textContent = text;
+    $('#code-line').innerHTML = info.key ? `Typing the address instead? Access code <b>${esc(info.key)}</b>` : '';
   }
 
   // -------------------------------------------------------------- upload --
@@ -133,10 +166,11 @@
     for (const file of files) {
       const item = { id: Math.random().toString(36).slice(2), file, loaded: 0, status: 'waiting', speed: 0 };
       queue.push(item);
+      const kind = kindOf(file.name);
       const li = document.createElement('li');
       li.className = 'q';
-      li.id = 'q-' + item.id;
-      li.innerHTML = `<div class="q-top"><span class="q-name">${esc(file.name)}</span><button type="button" class="icon-btn" title="Cancel">&#10005;</button></div>
+      li.innerHTML = `<div class="q-top"><span class="q-ico k-${kind}">${icon(KIND_ICON[kind])}</span>
+        <span class="q-name">${esc(file.name)}</span><button type="button" class="icon-btn"></button></div>
         <div class="bar"><i></i></div><div class="q-meta"><span class="q-left"></span><span class="q-right"></span></div>`;
       li.querySelector('button').onclick = () => cancel(item);
       $('#queue').appendChild(li);
@@ -166,12 +200,15 @@
   function updateItem(item) {
     const { el, file } = item;
     el.className = 'q ' + item.status;
-    const pct = file.size ? (item.loaded / file.size) * 100 : item.status === 'done' ? 100 : 0;
+    const pct = file.size ? (item.loaded / file.size) * 100 : 0;
     el.querySelector('.bar > i').style.width = (item.status === 'done' ? 100 : pct) + '%';
     const left = el.querySelector('.q-left'), right = el.querySelector('.q-right');
     const btn = el.querySelector('button');
-    btn.innerHTML = item.status === 'error' || item.status === 'cancelled' ? '&#8635;' : '&#10005;';
-    btn.title = item.status === 'error' || item.status === 'cancelled' ? 'Retry' : item.status === 'done' ? 'Remove' : 'Cancel';
+    const retry = item.status === 'error' || item.status === 'cancelled';
+    const btnIcon = retry ? 'retry' : item.status === 'done' ? 'check' : 'x';
+    if (btn.dataset.icon !== btnIcon) { btn.innerHTML = icon(btnIcon); btn.dataset.icon = btnIcon; }
+    btn.className = 'icon-btn' + (retry || item.status === 'done' ? ' plain' : '');
+    btn.title = retry ? 'Retry' : item.status === 'done' ? 'Remove' : 'Cancel';
     switch (item.status) {
       case 'waiting': left.textContent = 'Waiting · ' + fmtSize(file.size); right.textContent = ''; break;
       case 'uploading':
@@ -180,7 +217,7 @@
         break;
       case 'done': left.textContent = `Sent · ${fmtSize(file.size)}`; right.textContent = item.took ? `${item.took.toFixed(1)}s` : ''; break;
       case 'error': left.textContent = item.error || 'Failed'; right.textContent = 'tap ↻ to retry'; break;
-      case 'cancelled': left.textContent = 'Cancelled'; right.textContent = ''; break;
+      case 'cancelled': left.textContent = 'Cancelled'; right.textContent = 'tap ↻ to retry'; break;
     }
   }
 
@@ -257,31 +294,33 @@
     zip.href = `/api/zip?from=${source}`;
     $('#open-folder').classList.toggle('hidden', state.me !== 'pc');
 
-    // Highlight files that arrived after the first load
+    // Animate files that arrived after the first load
     const prev = state.seen;
-    state.seen = new Set(state.files.map((f) => f.from + '/' + f.name + '/' + f.mtime));
+    const keyOf = (f) => f.from + '/' + f.name + '/' + f.mtime;
+    state.seen = new Set(state.files.map(keyOf));
 
     $('#files').innerHTML = list.map((f) => {
       const kind = kindOf(f.name);
-      const ext = (f.name.includes('.') ? f.name.split('.').pop() : 'file').slice(0, 4);
-      const icon = kind === 'image' && f.size < 15 * 1048576
+      const ext = f.name.includes('.') ? f.name.split('.').pop().slice(0, 5) : '';
+      const visual = canPreview(f.name) && f.size < 15 * 1048576
         ? `<img loading="lazy" alt="" src="${fileUrl(f)}?inline=1">`
-        : esc(ext);
-      const fresh = prev && !prev.has(f.from + '/' + f.name + '/' + f.mtime) ? ' fresh' : '';
-      return `<li class="file${fresh}" data-from="${f.from}" data-name="${esc(f.name)}">
-        <div class="ficon ${kind}">${icon}</div>
-        <div class="fmeta">
-          <a class="fname" href="${fileUrl(f)}?inline=1" target="_blank" rel="noopener">${esc(f.name)}</a>
-          <div class="muted small">${fmtSize(f.size)} · ${fmtTime(f.mtime)}</div>
+        : icon(KIND_ICON[kind]);
+      const fresh = prev && !prev.has(keyOf(f)) ? ' fresh' : '';
+      return `<li class="tile${fresh}" data-from="${f.from}" data-name="${esc(f.name)}">
+        <a class="thumb k-${kind}" href="${fileUrl(f)}?inline=1" target="_blank" rel="noopener" title="Open">${visual}${ext ? `<span class="ext">${esc(ext)}</span>` : ''}</a>
+        <div class="tname" title="${esc(f.name)}">${esc(f.name)}</div>
+        <div class="tmeta">${fmtSize(f.size)} · ${fmtTime(f.mtime)}</div>
+        <div class="tactions">
+          <a class="btn small" href="${fileUrl(f)}" download="${esc(f.name)}">${icon('download')}<span>Save</span></a>
+          <button type="button" class="icon-btn" data-del title="Delete">${icon('trash')}</button>
         </div>
-        <a class="btn small" href="${fileUrl(f)}" download="${esc(f.name)}">Download</a>
-        <button type="button" class="icon-btn" data-del title="Delete">&#10005;</button>
       </li>`;
     }).join('');
 
-    $('#empty').textContent = list.length ? '' : state.tab === 'in'
-      ? `Nothing received yet. Files sent from your ${sideLabel(otherSide())} will appear here.`
-      : 'Files you send appear here.';
+    $('#empty').classList.toggle('hidden', list.length > 0);
+    $('#empty-text').textContent = state.tab === 'in'
+      ? `Nothing yet. Files sent from your ${sideLabel(otherSide())} land here.`
+      : 'Files you send show up here.';
   }
 
   function notifyNew(oldFiles, newFiles) {
@@ -310,7 +349,7 @@
     $('#texts').innerHTML = state.texts.map((t) => `<li class="tmsg${t.from === state.me ? ' mine' : ''}" data-id="${t.id}">
       <div class="tbody">${linkify(t.text)}</div>
       <div class="tfoot"><span>${t.from === state.me ? 'You' : 'From ' + sideLabel(t.from)} · ${fmtTime(t.time)}</span>
-      <span><button type="button" class="btn ghost" data-copy>Copy</button> <button type="button" class="icon-btn" data-tdel title="Delete">&#10005;</button></span></div>
+      <span><button type="button" class="icon-btn plain" data-copy title="Copy">${icon('copy')}</button><button type="button" class="icon-btn" data-tdel title="Delete">${icon('trash')}</button></span></div>
     </li>`).join('');
   }
 
@@ -320,7 +359,7 @@
     const es = new EventSource('/api/events');
     es.addEventListener('files', (e) => {
       const files = JSON.parse(e.data);
-      notifyNew(state.files.length || state.seen ? state.files : null, files);
+      notifyNew(state.seen ? state.files : null, files);
       state.files = files;
       renderFiles();
     });
@@ -331,11 +370,9 @@
       state.texts = texts;
       renderTexts();
     });
-    es.addEventListener('devices', (e) => renderDevices(JSON.parse(e.data)));
-    es.onopen = () => {
-      if (state.me !== 'pc') setStatus(true, `Connected to ${state.info ? state.info.hostname : 'PC'}`);
-    };
-    es.onerror = () => setStatus(false, state.me === 'pc' ? 'Server stopped' : 'Disconnected — reconnecting…');
+    es.addEventListener('devices', (e) => { state.peers = JSON.parse(e.data); renderHero(); });
+    es.onopen = () => { state.online = true; renderHero(); };
+    es.onerror = () => { state.online = false; renderHero(); };
   }
 
   async function loadInfo() {
@@ -345,9 +382,10 @@
       document.body.classList.toggle('is-pc', state.me === 'pc');
       $('#send-title').textContent = state.me === 'pc' ? 'Send to phone' : 'Send to PC';
       $('#send-hint').textContent = state.me === 'pc'
-        ? 'Files go to your phone instantly — any size.'
-        : `Files are saved on ${state.info.hostname}.`;
+        ? 'Any file, any size.'
+        : `Saved straight onto ${state.info.hostname}.`;
       renderConnect();
+      renderHero();
     } catch {}
   }
 
@@ -386,7 +424,7 @@
     $('#files').addEventListener('click', async (e) => {
       const del = e.target.closest('[data-del]');
       if (!del) return;
-      const li = del.closest('.file');
+      const li = del.closest('.tile');
       if (!confirm(`Delete "${li.dataset.name}" from the PC?`)) return;
       try { await api(`/api/files/${li.dataset.from}/${encodeURIComponent(li.dataset.name)}`, { method: 'DELETE' }); }
       catch (err) { toast(err.message); }
@@ -422,6 +460,10 @@
       const item = state.texts.find((t) => t.id === li.dataset.id);
       if (e.target.closest('[data-copy]')) toast((await copyText(item.text)) ? 'Copied' : 'Copy failed — long-press the text to copy');
       if (e.target.closest('[data-tdel]')) api('/api/text/' + item.id, { method: 'DELETE' }).catch((err) => toast(err.message));
+    });
+
+    document.querySelectorAll('[data-copy-target]').forEach((b) => {
+      b.onclick = async () => toast((await copyText($('#' + b.dataset.copyTarget).textContent)) ? 'Copied' : 'Copy failed');
     });
 
     window.addEventListener('beforeunload', (e) => {
